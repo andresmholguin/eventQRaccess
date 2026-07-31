@@ -253,8 +253,12 @@ export default function Home() {
           {/* Logo y Badge */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="bg-emerald-500 p-2 rounded-xl text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
-                <LayoutDashboard className="w-5 h-5" />
+              <div className="bg-emerald-500/10 p-1.5 rounded-xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="w-7 h-7 object-contain"
+                />
               </div>
               <div>
                 <span className="font-extrabold text-sm tracking-wide text-slate-100 uppercase block">

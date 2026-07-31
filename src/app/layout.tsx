@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "QRBoletos Dashboard Helper",
   description: "Panel de accesos rápidos y extractor de localidades de eventos para QRBoletos.",
   icons: {
-    icon: "/icon.jpg",
+    icon: "/icon.png",
   },
 };
 
