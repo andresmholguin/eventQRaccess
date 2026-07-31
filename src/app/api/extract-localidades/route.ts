@@ -176,18 +176,24 @@ function parseLocalidadesHtml(html: string): Localidad[] {
     }
 
     if (nombre && primaryHref) {
-      // Extraer ID si está en el href (ej. sectionId=123 o similar)
+      // Extraer ID de la sección (preferir path parameter, de lo contrario query param)
       let id: string | undefined;
-      const idMatch = primaryHref.match(/(?:id|sectionid|sectionId|secId)=([^&]+)/i);
-      if (idMatch) {
-        id = idMatch[1];
+      const pathIdMatch = primaryHref.match(/\/sections\/([^\/]+)/);
+      const queryIdMatch = primaryHref.match(/(?:id|sectionid|sectionId|secId)=([^&]+)/i);
+      
+      if (pathIdMatch && pathIdMatch[1] !== 'settings.aspx' && pathIdMatch[1] !== 'list.aspx') {
+        id = pathIdMatch[1];
+      } else if (queryIdMatch) {
+        id = queryIdMatch[1];
       }
+
+      const derivedLinks = generateLocalityLinks(primaryHref);
 
       localidades.push({
         nombre,
         url: primaryHref,
         id,
-        links: allLinks,
+        links: derivedLinks,
       });
     }
   });
@@ -211,13 +217,61 @@ function parseLocalidadesHtml(html: string): Localidad[] {
 
 function localitiesFallback(nombre: string, href: string, list: Localidad[]) {
   let id: string | undefined;
-  const idMatch = href.match(/(?:id|sectionid|sectionId|secId)=([^&]+)/i);
-  if (idMatch) {
-    id = idMatch[1];
+  const pathIdMatch = href.match(/\/sections\/([^\/]+)/);
+  const queryIdMatch = href.match(/(?:id|sectionid|sectionId|secId)=([^&]+)/i);
+  
+  if (pathIdMatch && pathIdMatch[1] !== 'settings.aspx' && pathIdMatch[1] !== 'list.aspx') {
+    id = pathIdMatch[1];
+  } else if (queryIdMatch) {
+    id = queryIdMatch[1];
   }
+
+  const derivedLinks = generateLocalityLinks(href);
+
   list.push({
     nombre,
     url: href,
     id,
+    links: derivedLinks,
   });
+}
+
+/**
+ * Genera automáticamente los 3 enlaces requeridos para cada localidad:
+ * 1. Configuración de localidad: .../sections/{ID}/settings.aspx
+ * 2. Precios: .../sections/{ID}/prices/sales.aspx
+ * 3. Acomodación: .../sections/{ID}/seats.aspx
+ */
+function generateLocalityLinks(primaryUrl: string): { label: string; url: string }[] {
+  // Intentar extraer el segmento base que llega hasta /sections/{SECTION_ID}
+  const pathMatch = primaryUrl.match(/^(.*\/sections\/[^\/]+)/);
+  if (pathMatch) {
+    const base = pathMatch[1];
+    // Evitar duplicar si la URL base termina en settings.aspx u otros nombres de archivo
+    if (!base.endsWith('/settings.aspx') && !base.endsWith('/list.aspx')) {
+      return [
+        { label: 'Configuración', url: `${base}/settings.aspx` },
+        { label: 'Precios', url: `${base}/prices/sales.aspx` },
+        { label: 'Acomodación', url: `${base}/seats.aspx` },
+      ];
+    }
+  }
+
+  // Fallback para query parameters si QRBoletos los usara en algún reporte (ej. sectionId=123)
+  const idMatch = primaryUrl.match(/(?:id|sectionid|sectionId|secId)=([^&]+)/i);
+  if (idMatch) {
+    const id = idMatch[1];
+    const baseMatch = primaryUrl.match(/^(.*)\/sections\//i);
+    if (baseMatch) {
+      const base = baseMatch[1];
+      return [
+        { label: 'Configuración', url: `${base}/sections/settings.aspx?id=${id}` },
+        { label: 'Precios', url: `${base}/sections/prices/sales.aspx?id=${id}` },
+        { label: 'Acomodación', url: `${base}/sections/seats.aspx?id=${id}` },
+      ];
+    }
+  }
+
+  // Si no se pudo parsear el ID, devolver el enlace original como "Configuración"
+  return [{ label: 'Configuración', url: primaryUrl }];
 }
