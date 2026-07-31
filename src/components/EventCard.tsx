@@ -94,6 +94,14 @@ export default function EventCard({
     }
   };
 
+  const handleOpenLocalities = () => {
+    if (!evento.localidades || evento.localidades.length === 0) {
+      const url = buildModuleUrl(domain, evento.promoterId, evento.eventId, evento.showId, 'sections/list.aspx');
+      window.open(url, '_blank');
+    }
+    onOpenLocalities(evento);
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:border-slate-700/80 transition-all group flex flex-col justify-between">
       {/* Cabecera de la Tarjeta */}
@@ -134,15 +142,21 @@ export default function EventCard({
         <div className="grid grid-cols-3 gap-2 bg-slate-950/60 rounded-xl p-2.5 mb-4 border border-slate-950 text-[11px] font-mono text-slate-400">
           <div>
             <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Promoter</span>
-            <span className="font-bold text-slate-300">{evento.promoterId}</span>
+            <span className="font-bold text-slate-300 block truncate" title={evento.promoterId}>
+              {evento.promoterId.length > 10 ? `${evento.promoterId.substring(0, 8)}...` : evento.promoterId}
+            </span>
           </div>
           <div>
             <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Event</span>
-            <span className="font-bold text-slate-300">{evento.eventId}</span>
+            <span className="font-bold text-slate-300 block truncate" title={evento.eventId}>
+              {evento.eventId.length > 10 ? `${evento.eventId.substring(0, 8)}...` : evento.eventId}
+            </span>
           </div>
           <div>
             <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Show</span>
-            <span className="font-bold text-slate-300">{evento.showId}</span>
+            <span className="font-bold text-slate-300 block truncate" title={evento.showId}>
+              {evento.showId.length > 10 ? `${evento.showId.substring(0, 8)}...` : evento.showId}
+            </span>
           </div>
         </div>
 
@@ -151,7 +165,7 @@ export default function EventCard({
           <div className="flex gap-2">
             {/* Abrir Localidades dentro del panel (Nuestra app) */}
             <button
-              onClick={() => onOpenLocalities(evento)}
+              onClick={handleOpenLocalities}
               className="flex-1 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-emerald-500 rounded-xl py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
             >
               <Eye className="w-4 h-4" />

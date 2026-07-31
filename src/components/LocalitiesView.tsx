@@ -7,17 +7,16 @@ import {
   Search,
   Globe,
   Clipboard,
-  Cpu,
   RefreshCw,
   AlertCircle,
-  HelpCircle,
   CheckCircle,
   ExternalLink,
   Settings,
   DollarSign,
   Armchair,
   Database,
-  CloudUpload
+  HelpCircle,
+  X
 } from 'lucide-react';
 
 interface LocalitiesViewProps {
@@ -27,13 +26,12 @@ interface LocalitiesViewProps {
 }
 
 export default function LocalitiesView({ evento, onBack, onSaveLocalities }: LocalitiesViewProps) {
-  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
-  const [cookie, setCookie] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [localidades, setLocalidades] = useState<Localidad[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPastePanel, setShowPastePanel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -51,31 +49,19 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
   // URL del listado de localidades
   const localitiesUrl = `${evento.urlBase}/sections/list.aspx`;
 
-  // Cargar cookie guardada en localStorage
-  useEffect(() => {
-    const savedCookie = localStorage.getItem('qrboletos_session_cookie');
-    if (savedCookie) {
-      setCookie(savedCookie);
-    }
-  }, []);
-
-  // Cargar localidades si ya existen en la base de datos para este evento
+  // Cargar localidades si ya existen en la base de datos
   useEffect(() => {
     if (evento.localidades && evento.localidades.length > 0) {
       setLocalidades(evento.localidades);
+      setShowPastePanel(false);
       setSuccess(`Cargadas ${evento.localidades.length} localidades de la base de datos.`);
     } else {
       setLocalidades([]);
+      setShowPastePanel(true);
       setSuccess(null);
     }
     setError(null);
   }, [evento]);
-
-  // Guardar cookie en localStorage
-  const handleSaveCookie = (val: string) => {
-    setCookie(val);
-    localStorage.setItem('qrboletos_session_cookie', val);
-  };
 
   // Convertir URL relativa a absoluta
   const makeAbsoluteUrl = (url: string): string => {
@@ -87,22 +73,28 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
     return `${domain}${cleanUrl}`;
   };
 
-  // Guardar localidades extraídas en Google Sheets o Local Storage
+  // Guardar localidades extraídas
   const saveExtractedLocalities = async (extracted: Localidad[]) => {
     if (!evento.id) return;
     setIsSaving(true);
     try {
       await onSaveLocalities(evento.id, extracted);
       setSuccess(`¡Se guardaron ${extracted.length} localidades en la base de datos!`);
+      setShowPastePanel(false); // Ocultar panel de pegado tras guardar
     } catch (err: any) {
-      setError(`Se extrajeron las localidades pero falló el autoguardado: ${err.message}`);
+      setError(`Se procesaron las localidades pero falló el autoguardado: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Petición al endpoint backend de extracción
-  const handleExtract = async (payload: { url?: string; cookie?: string; htmlContent?: string }) => {
+  // Petición al endpoint backend de extracción por HTML pegado
+  const handleManualExtract = async () => {
+    if (!htmlContent.trim()) {
+      setError('Por favor, pega el código HTML primero.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -111,7 +103,7 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
       const res = await fetch('/api/extract-localidades', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ htmlContent: htmlContent.trim() }),
       });
 
       const data = await res.json();
@@ -121,36 +113,24 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
       }
 
       setLocalidades(data.localidades);
-      
-      if (payload.htmlContent) {
-        setHtmlContent(''); // Limpiar textarea si es manual
-      }
+      setHtmlContent(''); // Limpiar textarea
 
-      // Autoguardar en la base de datos
+      // Guardar automáticamente en Sheets / Local Storage
       await saveExtractedLocalities(data.localidades);
 
     } catch (err: any) {
-      setError(err.message || 'Error al procesar.');
+      setError(err.message || 'Error al procesar el código HTML.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAutoExtract = () => {
-    handleExtract({
-      url: localitiesUrl,
-      cookie: cookie.trim() || undefined,
-    });
-  };
-
-  const handleManualExtract = () => {
-    if (!htmlContent.trim()) {
-      setError('Por favor, pega el código HTML primero.');
-      return;
-    }
-    handleExtract({
-      htmlContent: htmlContent.trim(),
-    });
+  // Activa el panel de pegado y abre el enlace de secciones en otra pestaña
+  const handleActivateUpdate = () => {
+    window.open(localitiesUrl, '_blank');
+    setShowPastePanel(true);
+    setSuccess(null);
+    setError(null);
   };
 
   // Filtrar localidades por búsqueda
@@ -160,7 +140,7 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
-      {/* Botón de retroceso e información del evento */}
+      {/* Cabecera del panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-6">
         <div className="flex items-center gap-3">
           <button
@@ -170,191 +150,148 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2 flex-wrap">
               {evento.nombre}
-              {evento.localidades && evento.localidades.length > 0 && (
-                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+              {localidades.length > 0 && !showPastePanel && (
+                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1.5 shadow-sm">
                   <Database className="w-3 h-3" />
-                  Persistido ({evento.localidades.length})
+                  Persistido ({localidades.length})
                 </span>
               )}
             </h2>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">{localitiesUrl}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800 flex items-center gap-1.5">
+          {/* Botón para actualizar localidades si ya existen en la base de datos */}
+          {localidades.length > 0 && !showPastePanel && (
+            <button
+              onClick={handleActivateUpdate}
+              className="bg-amber-600/10 hover:bg-amber-600 text-amber-400 hover:text-slate-950 border border-amber-500/20 hover:border-amber-500 rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Actualizar Localidades
+            </button>
+          )}
+
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-950 px-3 py-2 rounded-full border border-slate-800 flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5 text-emerald-500" />
             {domain.replace('https://', '')}
           </span>
         </div>
       </div>
 
-      {/* Tabs selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl w-full md:max-w-md border border-slate-800/80">
-          <button
-            onClick={() => setActiveTab('auto')}
-            className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              activeTab === 'auto'
-                ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <Cpu className="w-4 h-4" />
-            Extracción Automática
-          </button>
-          <button
-            onClick={() => setActiveTab('manual')}
-            className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              activeTab === 'manual'
-                ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <Clipboard className="w-4 h-4" />
-            Pegado Manual de HTML
-          </button>
-        </div>
-
-        {/* Indicador de Autoguardado */}
-        {localidades.length > 0 && (
-          <div className="text-xs text-slate-400 flex items-center gap-2">
-            <CloudUpload className="w-4.5 h-4.5 text-emerald-500" />
-            <span>Los cambios se guardan automáticamente en tu base de datos al extraer.</span>
-          </div>
-        )}
-      </div>
-
-      {/* Formulario de extracción según tab activa */}
-      <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-5 mb-6">
-        {activeTab === 'auto' ? (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                Cookie de Sesión (Recomendada para saltar Login)
-              </label>
-              <input
-                type="text"
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono placeholder:text-slate-600"
-                placeholder="Ej: ASP.NET_SessionId=xxxxxxx;..."
-                value={cookie}
-                onChange={(e) => handleSaveCookie(e.target.value)}
-              />
-              <p className="text-[11px] text-slate-500 mt-2 flex items-start gap-1.5">
-                <HelpCircle className="w-4 h-4 shrink-0 text-slate-600 mt-0.5" />
-                <span>
-                  <strong>¿Cómo obtenerla?</strong> Inicia sesión en <code>dashboard.qrboletos.com</code>, presiona F12 en tu navegador, ve a <strong>Aplicación &gt; Cookies</strong>, copia el valor de <code>ASP.NET_SessionId</code> y pégalo aquí. La app la recordará de forma segura en tu navegador.
-                </span>
-              </p>
-            </div>
-
-            <button
-              onClick={handleAutoExtract}
-              disabled={isLoading || isSaving}
-              className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="w-4.5 h-4.5 animate-spin" />
-                  Extrayendo Localidades...
-                </>
-              ) : isSaving ? (
-                <>
-                  <RefreshCw className="w-4.5 h-4.5 animate-spin text-emerald-300" />
-                  Guardando en base de datos...
-                </>
-              ) : (
-                <>
-                  <Cpu className="w-4.5 h-4.5" />
-                  {localidades.length > 0 ? 'Actualizar Localidades Automáticamente' : 'Obtener Localidades Automáticamente'}
-                </>
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                Código HTML de la Página de Localidades
-              </label>
-              <textarea
-                className="w-full h-36 bg-slate-900 border border-slate-800 text-slate-100 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono placeholder:text-slate-600"
-                placeholder="Haz clic derecho -> Inspeccionar en el contenedor de localidades, o pulsa Ctrl+U, copia el código HTML completo de la página de secciones de QRBoletos y pégalo aquí..."
-                value={htmlContent}
-                onChange={(e) => setHtmlContent(e.target.value)}
-              />
-            </div>
-
-            <button
-              onClick={handleManualExtract}
-              disabled={isLoading || isSaving || !htmlContent.trim()}
-              className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="w-4.5 h-4.5 animate-spin" />
-                  Procesando HTML...
-                </>
-              ) : isSaving ? (
-                <>
-                  <RefreshCw className="w-4.5 h-4.5 animate-spin text-emerald-300" />
-                  Guardando en base de datos...
-                </>
-              ) : (
-                <>
-                  <Clipboard className="w-4.5 h-4.5" />
-                  {localidades.length > 0 ? 'Actualizar Código HTML' : 'Procesar Código HTML'}
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Feedback visual de carga, éxito y error */}
-        {error && (
-          <div className="mt-4 bg-red-500/5 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-semibold block">Error de Extracción</span>
-              <p className="text-xs text-red-300/90">{error}</p>
-              {activeTab === 'auto' && (
-                <button
-                  onClick={() => setActiveTab('manual')}
-                  className="text-xs text-emerald-400 hover:underline block mt-1"
-                >
-                  Intentar pegando el HTML manualmente &rarr;
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="mt-4 bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Resultados de las Localidades extraídas */}
-      {localidades.length > 0 && (
+      {/* Vista A: Panel de pegado manual (Si no hay localidades o se seleccionó Actualizar) */}
+      {showPastePanel && (
         <div className="space-y-4">
+          <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-5">
+            <div className="flex items-start gap-3 mb-4">
+              <Clipboard className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-200">Código HTML de la Página de Localidades</h3>
+                <p className="text-xs text-slate-400">
+                  Pega el código fuente HTML de la página de secciones de QRBoletos.
+                </p>
+              </div>
+            </div>
+
+            <textarea
+              className="w-full h-44 bg-slate-900 border border-slate-800 text-slate-100 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono placeholder:text-slate-600"
+              placeholder="Haz clic derecho -> Inspeccionar en el contenedor de localidades, o pulsa Ctrl+U, copia el código HTML completo de la página de secciones de QRBoletos y pégalo aquí..."
+              value={htmlContent}
+              onChange={(e) => setHtmlContent(e.target.value)}
+            />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleManualExtract}
+                  disabled={isLoading || isSaving || !htmlContent.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4.5 h-4.5 animate-spin" />
+                      Procesando HTML...
+                    </>
+                  ) : isSaving ? (
+                    <>
+                      <RefreshCw className="w-4.5 h-4.5 animate-spin text-emerald-300" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Clipboard className="w-4.5 h-4.5" />
+                      Procesar Código HTML
+                    </>
+                  )}
+                </button>
+
+                {/* Permitir cancelar y volver al listado si ya existen localidades guardadas */}
+                {localidades.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setShowPastePanel(false);
+                      setError(null);
+                    }}
+                    className="border border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-white font-semibold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancelar
+                  </button>
+                )}
+              </div>
+
+              {/* Enlace alternativo para abrir la URL manualmente */}
+              <a
+                href={localitiesUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-slate-400 hover:text-emerald-400 flex items-center gap-1 font-medium transition-colors"
+              >
+                Abrir configuración de secciones en QRBoletos
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Ayuda de copiado */}
+            <p className="text-[11px] text-slate-500 mt-4 flex items-start gap-1.5 border-t border-slate-900 pt-3">
+              <HelpCircle className="w-4 h-4 shrink-0 text-slate-600 mt-0.5" />
+              <span>
+                <strong>¿Cómo copiar el código?</strong> En la pestaña de QRBoletos que se abrió, haz clic derecho en cualquier parte y selecciona <strong>&quot;Ver código fuente de la página&quot;</strong> (o presiona <code>Ctrl + U</code>). Copia todo el contenido (<code>Ctrl + A</code> y luego <code>Ctrl + C</code>) y pégalo en el cuadro de arriba.
+              </span>
+            </p>
+          </div>
+
+          {/* Feedback visual de errores */}
+          {error && (
+            <div className="bg-red-500/5 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-semibold block">Error al Procesar HTML</span>
+                <p className="text-xs text-red-300/90">{error}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Vista B: Listado de Localidades (Si hay localidades guardadas y no se está actualizando) */}
+      {!showPastePanel && localidades.length > 0 && (
+        <div className="space-y-4 mt-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <h3 className="text-base font-bold text-slate-200 flex items-center gap-2">
               <Armchair className="text-emerald-500 w-5 h-5" />
-              Listado de Localidades ({filteredLocalidades.length})
+              Localidades Encontradas ({filteredLocalidades.length})
             </h3>
             
             {/* Buscador de localidades */}
             <div className="relative w-full md:w-64">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4.5 h-4.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Buscar localidad..."
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -389,7 +326,7 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
                       href={makeAbsoluteUrl(configLink)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-pink-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-pink-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       <Settings className="w-3.5 h-3.5" />
                       <span>Configuración</span>
@@ -402,7 +339,7 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
                         href={makeAbsoluteUrl(pricesLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                        className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
                       >
                         <DollarSign className="w-3.5 h-3.5 text-amber-500" />
                         <span>Precios</span>
@@ -416,7 +353,7 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
                         href={makeAbsoluteUrl(seatsLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-slate-900 border border-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                        className="bg-slate-900 border border-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
                       >
                         <Armchair className="w-3.5 h-3.5 text-blue-400" />
                         <span>Acomodación</span>
