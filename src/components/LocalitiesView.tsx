@@ -13,21 +13,27 @@ import {
   HelpCircle,
   CheckCircle,
   ExternalLink,
-  MapPin
+  Settings,
+  DollarSign,
+  Armchair,
+  Database,
+  CloudUpload
 } from 'lucide-react';
 
 interface LocalitiesViewProps {
   evento: Evento;
   onBack: () => void;
+  onSaveLocalities: (rowId: string, localidades: Localidad[]) => Promise<void>;
 }
 
-export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) {
+export default function LocalitiesView({ evento, onBack, onSaveLocalities }: LocalitiesViewProps) {
   const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
   const [cookie, setCookie] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [localidades, setLocalidades] = useState<Localidad[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -53,13 +59,25 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
     }
   }, []);
 
-  // Función para guardar la cookie en localStorage
+  // Cargar localidades si ya existen en la base de datos para este evento
+  useEffect(() => {
+    if (evento.localidades && evento.localidades.length > 0) {
+      setLocalidades(evento.localidades);
+      setSuccess(`Cargadas ${evento.localidades.length} localidades de la base de datos.`);
+    } else {
+      setLocalidades([]);
+      setSuccess(null);
+    }
+    setError(null);
+  }, [evento]);
+
+  // Guardar cookie en localStorage
   const handleSaveCookie = (val: string) => {
     setCookie(val);
     localStorage.setItem('qrboletos_session_cookie', val);
   };
 
-  // Convertir URL relativa a absoluta si es necesario
+  // Convertir URL relativa a absoluta
   const makeAbsoluteUrl = (url: string): string => {
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -67,6 +85,20 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
     }
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
     return `${domain}${cleanUrl}`;
+  };
+
+  // Guardar localidades extraídas en Google Sheets o Local Storage
+  const saveExtractedLocalities = async (extracted: Localidad[]) => {
+    if (!evento.id) return;
+    setIsSaving(true);
+    try {
+      await onSaveLocalities(evento.id, extracted);
+      setSuccess(`¡Se guardaron ${extracted.length} localidades en la base de datos!`);
+    } catch (err: any) {
+      setError(`Se extrajeron las localidades pero falló el autoguardado: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Petición al endpoint backend de extracción
@@ -89,13 +121,16 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
       }
 
       setLocalidades(data.localidades);
-      setSuccess(`¡Se extrajeron ${data.localidades.length} localidades exitosamente!`);
       
       if (payload.htmlContent) {
-        setHtmlContent(''); // Limpiar si es manual
+        setHtmlContent(''); // Limpiar textarea si es manual
       }
+
+      // Autoguardar en la base de datos
+      await saveExtractedLocalities(data.localidades);
+
     } catch (err: any) {
-      setError(err.message || 'Error de red.');
+      setError(err.message || 'Error al procesar.');
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +170,15 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-bold text-slate-100">{evento.nombre}</h2>
+            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+              {evento.nombre}
+              {evento.localidades && evento.localidades.length > 0 && (
+                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                  <Database className="w-3 h-3" />
+                  Persistido ({evento.localidades.length})
+                </span>
+              )}
+            </h2>
             <p className="text-xs text-slate-400 font-mono mt-0.5">{localitiesUrl}</p>
           </div>
         </div>
@@ -149,29 +192,39 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
       </div>
 
       {/* Tabs selector */}
-      <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl mb-6 max-w-md border border-slate-800/80">
-        <button
-          onClick={() => setActiveTab('auto')}
-          className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            activeTab === 'auto'
-              ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
-              : 'text-slate-500 hover:text-slate-300'
-          }`}
-        >
-          <Cpu className="w-4 h-4" />
-          Extracción Automática
-        </button>
-        <button
-          onClick={() => setActiveTab('manual')}
-          className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            activeTab === 'manual'
-              ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
-              : 'text-slate-500 hover:text-slate-300'
-          }`}
-        >
-          <Clipboard className="w-4 h-4" />
-          Pegado Manual de HTML
-        </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl w-full md:max-w-md border border-slate-800/80">
+          <button
+            onClick={() => setActiveTab('auto')}
+            className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'auto'
+                ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Cpu className="w-4 h-4" />
+            Extracción Automática
+          </button>
+          <button
+            onClick={() => setActiveTab('manual')}
+            className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'manual'
+                ? 'bg-slate-900 text-emerald-400 shadow-md border border-slate-800/50'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Clipboard className="w-4 h-4" />
+            Pegado Manual de HTML
+          </button>
+        </div>
+
+        {/* Indicador de Autoguardado */}
+        {localidades.length > 0 && (
+          <div className="text-xs text-slate-400 flex items-center gap-2">
+            <CloudUpload className="w-4.5 h-4.5 text-emerald-500" />
+            <span>Los cambios se guardan automáticamente en tu base de datos al extraer.</span>
+          </div>
+        )}
       </div>
 
       {/* Formulario de extracción según tab activa */}
@@ -199,7 +252,7 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
 
             <button
               onClick={handleAutoExtract}
-              disabled={isLoading}
+              disabled={isLoading || isSaving}
               className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isLoading ? (
@@ -207,10 +260,15 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
                   <RefreshCw className="w-4.5 h-4.5 animate-spin" />
                   Extrayendo Localidades...
                 </>
+              ) : isSaving ? (
+                <>
+                  <RefreshCw className="w-4.5 h-4.5 animate-spin text-emerald-300" />
+                  Guardando en base de datos...
+                </>
               ) : (
                 <>
                   <Cpu className="w-4.5 h-4.5" />
-                  Obtener Localidades Automáticamente
+                  {localidades.length > 0 ? 'Actualizar Localidades Automáticamente' : 'Obtener Localidades Automáticamente'}
                 </>
               )}
             </button>
@@ -231,7 +289,7 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
 
             <button
               onClick={handleManualExtract}
-              disabled={isLoading || !htmlContent.trim()}
+              disabled={isLoading || isSaving || !htmlContent.trim()}
               className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isLoading ? (
@@ -239,10 +297,15 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
                   <RefreshCw className="w-4.5 h-4.5 animate-spin" />
                   Procesando HTML...
                 </>
+              ) : isSaving ? (
+                <>
+                  <RefreshCw className="w-4.5 h-4.5 animate-spin text-emerald-300" />
+                  Guardando en base de datos...
+                </>
               ) : (
                 <>
                   <Clipboard className="w-4.5 h-4.5" />
-                  Procesar Código HTML
+                  {localidades.length > 0 ? 'Actualizar Código HTML' : 'Procesar Código HTML'}
                 </>
               )}
             </button>
@@ -281,8 +344,8 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <h3 className="text-base font-bold text-slate-200 flex items-center gap-2">
-              <MapPin className="text-emerald-500 w-5 h-5" />
-              Localidades Encontradas ({filteredLocalidades.length})
+              <Armchair className="text-emerald-500 w-5 h-5" />
+              Listado de Localidades ({filteredLocalidades.length})
             </h3>
             
             {/* Buscador de localidades */}
@@ -298,60 +361,72 @@ export default function LocalitiesView({ evento, onBack }: LocalitiesViewProps) 
             </div>
           </div>
 
-          {/* Listado en formato tabla responsiva o tarjetas */}
-          <div className="overflow-x-auto border border-slate-800/80 rounded-xl bg-slate-950/40">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400 font-semibold uppercase tracking-wider">
-                  <th className="px-5 py-3.5">Nombre de Localidad</th>
-                  <th className="px-5 py-3.5">ID Secc.</th>
-                  <th className="px-5 py-3.5 text-right">Enlaces de Configuración</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredLocalidades.map((loc, idx) => (
-                  <tr key={idx} className="hover:bg-slate-900/30 transition-colors">
-                    <td className="px-5 py-4 font-bold text-slate-100 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          {/* Listado de tarjetas de localidad - Altamente accesibles */}
+          <div className="grid grid-cols-1 gap-3">
+            {filteredLocalidades.map((loc, idx) => {
+              // Obtener los links específicos
+              const configLink = loc.links?.find(l => l.label === 'Configuración')?.url || loc.url;
+              const pricesLink = loc.links?.find(l => l.label === 'Precios')?.url;
+              const seatsLink = loc.links?.find(l => l.label === 'Acomodación')?.url;
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-slate-950 border border-slate-800/80 rounded-xl p-4.5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700/60 transition-all group"
+                >
+                  {/* Nombre de la Localidad */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-110 transition-transform"></div>
+                    <span className="font-extrabold text-sm text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-wide">
                       {loc.nombre}
-                    </td>
-                    <td className="px-5 py-4 text-slate-500 font-mono">
-                      {loc.id || '-'}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 flex-wrap">
-                        {/* Si el parser logró extraer múltiples links de la tarjeta */}
-                        {loc.links && loc.links.length > 0 ? (
-                          loc.links.map((link, lIdx) => (
-                            <a
-                              key={lIdx}
-                              href={makeAbsoluteUrl(link.url)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <span>{link.label}</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          ))
-                        ) : (
-                          // Fallback si solo existe el link principal
-                          <a
-                            href={makeAbsoluteUrl(loc.url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
-                          >
-                            <span>Configuración</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+
+                  {/* Botones de acción - Grandes y altamente accesibles */}
+                  <div className="grid grid-cols-3 sm:flex items-center gap-2">
+                    {/* Botón de Configuración */}
+                    <a
+                      href={makeAbsoluteUrl(configLink)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-pink-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      <span>Configuración</span>
+                      <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                    </a>
+
+                    {/* Botón de Precios */}
+                    {pricesLink && (
+                      <a
+                        href={makeAbsoluteUrl(pricesLink)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                      >
+                        <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Precios</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      </a>
+                    )}
+
+                    {/* Botón de Acomodación */}
+                    {seatsLink && (
+                      <a
+                        href={makeAbsoluteUrl(seatsLink)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-slate-900 border border-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 rounded-xl py-2 px-3 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                      >
+                        <Armchair className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Acomodación</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

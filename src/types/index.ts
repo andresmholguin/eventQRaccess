@@ -8,6 +8,7 @@ export interface Evento {
   urlBase: string;
   fechaCreacion: string;
   favorito: boolean;
+  localidades?: Localidad[];
 }
 
 export interface LocalidadLink {

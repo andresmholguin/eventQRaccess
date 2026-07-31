@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import AddEventForm from '@/components/AddEventForm';
 import EventCard from '@/components/EventCard';
 import LocalitiesView from '@/components/LocalitiesView';
-import { Evento } from '@/types';
+import { Evento, Localidad } from '@/types';
 import {
   Layers,
   Database,
@@ -165,6 +165,36 @@ export default function Home() {
     }
   };
 
+  // Guardar/Actualizar localidades de un evento
+  const handleSaveLocalities = async (id: string, localidades: Localidad[]) => {
+    if (isSheetsMode) {
+      const res = await fetch('/api/events', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, localidades }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Error al guardar localidades en Google Sheets.');
+      }
+    }
+
+    // Actualizar estado local (para ambos modos)
+    const actualizados = eventos.map((e) =>
+      e.id === id ? { ...e, localidades } : e
+    );
+    setEventos(actualizados);
+
+    if (!isSheetsMode) {
+      localStorage.setItem('qrboletos_local_events', JSON.stringify(actualizados));
+    }
+
+    // Sincronizar el evento seleccionado para reflejar que está guardado
+    if (selectedEvento && selectedEvento.id === id) {
+      setSelectedEvento({ ...selectedEvento, localidades });
+    }
+  };
+
   // Filtros de búsqueda
   const filteredEvents = eventos.filter((e) =>
     e.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -223,6 +253,7 @@ export default function Home() {
           <LocalitiesView
             evento={selectedEvento}
             onBack={() => setSelectedEvento(null)}
+            onSaveLocalities={handleSaveLocalities}
           />
         ) : (
           // Dashboard principal

@@ -1,9 +1,9 @@
 import { google } from 'googleapis';
-import { Evento } from '../types';
+import { Evento, Localidad } from '../types';
 
 // Rango para la consulta y escritura en Sheets
 const SHEET_NAME = 'Eventos';
-const RANGE = `${SHEET_NAME}!A:H`;
+const RANGE = `${SHEET_NAME}!A:I`;
 
 /**
  * Retorna true si las credenciales de Google Sheets están configuradas.
@@ -45,7 +45,7 @@ async function initializeSheet(sheets: any, spreadsheetId: string) {
     // Intentar leer las primeras filas para verificar si hay datos
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${SHEET_NAME}!A1:H1`,
+      range: `${SHEET_NAME}!A1:I1`,
     });
 
     if (!response.data.values || response.data.values.length === 0) {
@@ -59,10 +59,11 @@ async function initializeSheet(sheets: any, spreadsheetId: string) {
         'URL base',
         'Fecha de creación',
         'Favorito',
+        'Localidades JSON',
       ];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${SHEET_NAME}!A1:H1`,
+        range: `${SHEET_NAME}!A1:I1`,
         valueInputOption: 'RAW',
         requestBody: {
           values: [headers],
@@ -101,10 +102,11 @@ async function initializeSheet(sheets: any, spreadsheetId: string) {
         'URL base',
         'Fecha de creación',
         'Favorito',
+        'Localidades JSON',
       ];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${SHEET_NAME}!A1:H1`,
+        range: `${SHEET_NAME}!A1:I1`,
         valueInputOption: 'RAW',
         requestBody: {
           values: [headers],
@@ -138,10 +140,10 @@ export async function fetchEventosFromSheets(): Promise<Evento[]> {
       range: RANGE,
     });
   } catch (error) {
-    // Fallback por si la pestaña 'Eventos' tiene problemas de acceso directos, leer rango genérico A:H
+    // Fallback por si la pestaña 'Eventos' tiene problemas de acceso directos, leer rango genérico A:I
     response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'A:H',
+      range: 'A:I',
     });
   }
 
@@ -151,12 +153,21 @@ export async function fetchEventosFromSheets(): Promise<Evento[]> {
   }
 
   // Las cabeceras están en la fila 0:
-  // [Nombre del evento, Fecha, Promoter ID, Event ID, Show ID, URL base, Fecha de creación, Favorito]
+  // [Nombre del evento, Fecha, Promoter ID, Event ID, Show ID, URL base, Fecha de creación, Favorito, Localidades JSON]
   const eventos: Evento[] = [];
   
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
+    
+    let localidadesParsed = undefined;
+    if (row[8]) {
+      try {
+        localidadesParsed = JSON.parse(row[8]);
+      } catch (e) {
+        console.error('Error parseando localidades JSON:', e);
+      }
+    }
     
     // Mapear columnas a objeto Evento. Guardamos el índice de la fila + 1 (1-based index para actualizar en Sheets)
     eventos.push({
@@ -169,6 +180,7 @@ export async function fetchEventosFromSheets(): Promise<Evento[]> {
       urlBase: row[5] || '',
       fechaCreacion: row[6] || '',
       favorito: row[7] === 'SI',
+      localidades: localidadesParsed,
     });
   }
 
@@ -197,6 +209,7 @@ export async function addEventoToSheets(evento: Omit<Evento, 'id'>): Promise<Eve
     evento.urlBase,
     evento.fechaCreacion,
     evento.favorito ? 'SI' : 'NO',
+    evento.localidades ? JSON.stringify(evento.localidades) : '[]',
   ];
 
   // Buscamos con pestaña específica, si falla intentamos con rango genérico
@@ -212,7 +225,7 @@ export async function addEventoToSheets(evento: Omit<Evento, 'id'>): Promise<Eve
       },
     });
   } catch (error) {
-    appendRange = 'A:H';
+    appendRange = 'A:I';
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: appendRange,
@@ -292,7 +305,7 @@ export async function deleteEventoInSheets(rowId: string): Promise<boolean> {
 
   const sheets = getSheetsInstance();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
-  const rowRange = `${SHEET_NAME}!A${rowId}:H${rowId}`;
+  const rowRange = `${SHEET_NAME}!A${rowId}:I${rowId}`;
 
   try {
     await sheets.spreadsheets.values.clear({
@@ -304,11 +317,51 @@ export async function deleteEventoInSheets(rowId: string): Promise<boolean> {
     try {
       await sheets.spreadsheets.values.clear({
         spreadsheetId,
-        range: `A${rowId}:H${rowId}`,
+        range: `A${rowId}:I${rowId}`,
       });
       return true;
     } catch (innerError) {
       console.error('Error eliminando evento en Sheets:', error.message);
+      return false;
+    }
+  }
+}
+
+/**
+ * Guarda o actualiza las localidades de un evento en Google Sheets.
+ */
+export async function updateEventoLocalidadesInSheets(rowId: string, localidades: Localidad[]): Promise<boolean> {
+  if (!isSheetsConfigured()) {
+    throw new Error('Google Sheets no está configurado.');
+  }
+
+  const sheets = getSheetsInstance();
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+  const cellRange = `${SHEET_NAME}!I${rowId}`;
+
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: cellRange,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[JSON.stringify(localidades)]],
+      },
+    });
+    return true;
+  } catch (error: any) {
+    try {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `I${rowId}`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [[JSON.stringify(localidades)]],
+        },
+      });
+      return true;
+    } catch (innerError: any) {
+      console.error('Error actualizando localidades en Sheets:', innerError.message || innerError);
       return false;
     }
   }

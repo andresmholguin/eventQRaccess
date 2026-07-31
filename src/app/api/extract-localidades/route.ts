@@ -120,8 +120,18 @@ function parseLocalidadesHtml(html: string): Localidad[] {
     const card = $(el);
 
     // 1. Extraer nombre de la localidad
-    // Buscamos títulos de tarjeta, encabezados, o texto destacado
-    let nombre = card.find('.card-title, h4, h5, h6, strong, .title').first().text().trim();
+    let nombre = '';
+    
+    // Buscar si hay una tabla con celda "Localidad" dentro de la tarjeta (prioridad)
+    const tdLabel = card.find('td').filter((_, tdEl) => $(tdEl).text().toLowerCase().includes('localidad'));
+    if (tdLabel.length > 0) {
+      nombre = tdLabel.next('td').text().trim();
+    }
+    
+    // Fallbacks si no se encuentra en la tabla
+    if (!nombre) {
+      nombre = card.find('.card-title, h4, h5, h6, strong, .title').first().text().trim();
+    }
     
     if (!nombre) {
       // Intentamos extraer el primer párrafo o texto directo antes de los botones

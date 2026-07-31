@@ -5,6 +5,7 @@ import {
   addEventoToSheets,
   updateEventoFavoritoInSheets,
   deleteEventoInSheets,
+  updateEventoLocalidadesInSheets,
 } from '@/services/googleSheets';
 import { Evento } from '@/types';
 
@@ -91,16 +92,27 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, favorito } = body;
+    const { id, favorito, localidades } = body;
 
-    if (!id || favorito === undefined) {
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Faltan campos requeridos (id, favorito).' },
+        { success: false, error: 'Falta el campo requerido (id).' },
         { status: 400 }
       );
     }
 
-    const success = await updateEventoFavoritoInSheets(id, favorito);
+    let success = false;
+    if (favorito !== undefined) {
+      success = await updateEventoFavoritoInSheets(id, favorito);
+    } else if (localidades !== undefined) {
+      success = await updateEventoLocalidadesInSheets(id, localidades);
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Se debe proporcionar favorito o localidades para actualizar.' },
+        { status: 400 }
+      );
+    }
+
     if (success) {
       return NextResponse.json({ success: true });
     } else {
@@ -112,7 +124,7 @@ export async function PATCH(request: Request) {
   } catch (error: any) {
     console.error('Error en PATCH /api/events:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Error al actualizar el favorito' },
+      { success: false, error: error.message || 'Error al actualizar el evento' },
       { status: 500 }
     );
   }
