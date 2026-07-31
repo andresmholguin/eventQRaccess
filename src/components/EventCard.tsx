@@ -29,12 +29,6 @@ interface EventCardProps {
 // Configuración de los módulos rápidos
 const MODULES = [
   {
-    name: 'Resumen Ventas',
-    path: 'reports/sales/summary.aspx',
-    icon: TrendingUp,
-    color: 'hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30',
-  },
-  {
     name: 'Etapas',
     path: 'phases/list.aspx',
     icon: Calendar,
@@ -45,6 +39,12 @@ const MODULES = [
     path: 'setup.aspx',
     icon: Settings,
     color: 'hover:bg-pink-500/10 hover:text-pink-400 hover:border-pink-500/30',
+  },
+  {
+    name: 'Resumen Ventas',
+    path: 'reports/sales/summary.aspx',
+    icon: TrendingUp,
+    color: 'hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30',
   },
 ];
 
