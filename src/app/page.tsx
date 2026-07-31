@@ -5,6 +5,7 @@ import AddEventForm from '@/components/AddEventForm';
 import EventCard from '@/components/EventCard';
 import LocalitiesView from '@/components/LocalitiesView';
 import { Evento, Localidad } from '@/types';
+import { getEventTimestamp } from '@/utils/dateFormatter';
 import {
   Layers,
   Database,
@@ -205,8 +206,13 @@ export default function Home() {
     e.eventId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const favoritos = filteredEvents.filter((e) => e.favorito);
-  const regulares = filteredEvents.filter((e) => !e.favorito);
+  // Ordenar cronológicamente (más cercano primero)
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    return getEventTimestamp(a.fecha) - getEventTimestamp(b.fecha);
+  });
+
+  const favoritos = sortedEvents.filter((e) => e.favorito);
+  const regulares = sortedEvents.filter((e) => !e.favorito);
 
   return (
     <main className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500/20">

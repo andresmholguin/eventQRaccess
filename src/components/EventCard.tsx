@@ -3,6 +3,7 @@
 import React from 'react';
 import { Evento } from '@/types';
 import { buildModuleUrl } from '@/services/urlParser';
+import { formatDateString } from '@/utils/dateFormatter';
 import {
   TrendingUp,
   BarChart2,
@@ -91,7 +92,7 @@ export default function EventCard({
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-              {evento.fecha || 'Sin Fecha'}
+              {formatDateString(evento.fecha)}
             </span>
             <h3 className="text-base font-bold text-slate-100 mt-1.5 group-hover:text-emerald-400 transition-colors line-clamp-1">
               {evento.nombre}

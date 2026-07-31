@@ -60,7 +60,7 @@ export default function AddEventForm({ onAddEvent }: AddEventFormProps) {
 
       await onAddEvent({
         nombre: nombre.trim(),
-        fecha: fecha || new Date().toLocaleDateString('es-ES'),
+        fecha: fecha || new Date().toISOString().split('T')[0],
         promoterId: parsed.promoterId,
         eventId: parsed.eventId,
         showId: parsed.showId,
@@ -146,9 +146,9 @@ export default function AddEventForm({ onAddEvent }: AddEventFormProps) {
               Fecha del Evento
             </label>
             <input
-              type="text"
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              placeholder="Ej. 15 Oct 2026"
+              type="date"
+              required={!!parsed}
+              className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all cursor-pointer"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
             />
