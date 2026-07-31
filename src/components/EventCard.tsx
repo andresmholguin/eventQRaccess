@@ -148,7 +148,11 @@ export default function EventCard({
             {/* Abrir Localidades dentro del panel (Nuestra app) */}
             <button
               onClick={handleOpenLocalities}
-              className="flex-1 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-emerald-500 rounded-xl py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
+              className={`flex-1 rounded-xl py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                evento.localidades && evento.localidades.length > 0
+                  ? 'bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-emerald-500'
+                  : 'bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/20 hover:border-amber-500'
+              }`}
             >
               <Eye className="w-4 h-4" />
               Ver Localidades (Panel)
