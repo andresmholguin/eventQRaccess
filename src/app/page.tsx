@@ -18,7 +18,9 @@ import {
   AlertTriangle,
   Plus,
   X,
-  Menu
+  Menu,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function Home() {
@@ -30,6 +32,33 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Cargar tema inicial al cargar la página
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' || 'dark';
+    setTheme(savedTheme);
+    if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  };
 
   // Cargar eventos iniciales al cargar la página
   useEffect(() => {
@@ -217,7 +246,7 @@ export default function Home() {
   const regulares = sortedEvents.filter((e) => !e.favorito);
 
   return (
-    <main className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500/20">
+    <main className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/20">
       {/* Navbar Superior */}
       <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -286,6 +315,15 @@ export default function Home() {
               </a>
             )}
 
+            {/* Botón de Cambio de Tema */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl transition-all hover:text-white cursor-pointer shadow-sm active:scale-95"
+              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+            </button>
+
             {/* Botón Nuevo Evento */}
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -296,8 +334,15 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Botón Hamburguesa en Móviles */}
-          <div className="flex md:hidden">
+          {/* Botón Hamburguesa y Cambio de Tema en Móviles */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-850 text-slate-300 rounded-xl transition-all hover:text-white cursor-pointer active:scale-95"
+              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              {theme === 'dark' ? <Sun className="w-4.5 h-4.5 text-amber-400" /> : <Moon className="w-4.5 h-4.5 text-indigo-400" />}
+            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-850 text-slate-300 rounded-xl transition-all hover:text-white cursor-pointer"

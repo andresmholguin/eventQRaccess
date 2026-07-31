@@ -3,6 +3,21 @@
 :root {
   --background: #030712;
   --foreground: #f1f5f9;
+  
+  --bg-card: #0f172a; /* slate-900 */
+  --bg-input: #020617; /* slate-950 */
+  --border-main: #1e293b; /* slate-800 */
+  --text-muted: #94a3b8; /* slate-400 */
+}
+
+html.light {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  
+  --bg-card: #ffffff; /* white */
+  --bg-input: #f1f5f9; /* slate-100 */
+  --border-main: #e2e8f0; /* slate-200 */
+  --text-muted: #475569; /* slate-600 */
 }
 
 @theme inline {
@@ -10,9 +25,27 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Mapeo de tokens estándar de Tailwind a nuestras variables de tema */
+  --color-slate-50: var(--background);
+  --color-slate-100: var(--foreground);
+  --color-slate-200: var(--foreground);
+  --color-slate-300: var(--foreground);
+  --color-slate-400: var(--text-muted);
+  --color-slate-500: var(--text-muted);
+  --color-slate-800: var(--border-main);
+  --color-slate-900: var(--bg-card);
+  --color-slate-950: var(--bg-input);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Animación de transición suave para cambio de tema */
+*, *::before, *::after {
+  transition-property: background-color, border-color, text-color, fill, stroke;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
