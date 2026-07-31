@@ -17,6 +17,7 @@ export default function AddEventForm({ onAddEvent }: AddEventFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
 
   // Analizar la URL en tiempo real
   useEffect(() => {
@@ -66,12 +67,14 @@ export default function AddEventForm({ onAddEvent }: AddEventFormProps) {
         showId: parsed.showId,
         urlBase,
         favorito: false,
+        imageUrl: imageUrl.trim(),
       });
 
       // Limpiar formulario al tener éxito
       setUrl('');
       setNombre('');
       setFecha('');
+      setImageUrl('');
       setParsed(null);
       setSuccessMsg('¡Evento agregado con éxito!');
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -123,34 +126,50 @@ export default function AddEventForm({ onAddEvent }: AddEventFormProps) {
           </div>
         )}
 
-        {/* Inputs de Nombre y Fecha (Visibles solo si la URL es válida para no saturar) */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 ${parsed ? 'opacity-100 max-h-40' : 'opacity-50 pointer-events-none'}`}>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-slate-400" />
-              Nombre del Evento
-            </label>
-            <input
-              type="text"
-              required={!!parsed}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              placeholder="Ej. Concierto de Rock"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
+        {/* Inputs de Nombre, Fecha e Imagen (Visibles solo si la URL es válida para no saturar) */}
+        <div className={`space-y-4 transition-all duration-300 ${parsed ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-slate-400" />
+                Nombre del Evento
+              </label>
+              <input
+                type="text"
+                required={!!parsed}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                placeholder="Ej. Concierto de Rock"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                Fecha del Evento
+              </label>
+              <input
+                type="date"
+                required={!!parsed}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all cursor-pointer"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              Fecha del Evento
+              <Link className="w-4 h-4 text-slate-400" />
+              URL de la Imagen (Banner/Flyer)
             </label>
             <input
-              type="date"
-              required={!!parsed}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all cursor-pointer"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              type="url"
+              className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all placeholder:text-slate-650"
+              placeholder="Pega la URL de la imagen del flyer o logo del evento..."
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
             />
           </div>
         </div>

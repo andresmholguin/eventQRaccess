@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nombre, fecha, promoterId, eventId, showId, urlBase, favorito } = body;
+    const { nombre, fecha, promoterId, eventId, showId, urlBase, favorito, imageUrl } = body;
 
     if (!nombre || !promoterId || !eventId || !showId) {
       return NextResponse.json(
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       urlBase: urlBase || '',
       fechaCreacion: new Date().toISOString().split('T')[0], // YYYY-MM-DD
       favorito: !!favorito,
+      imageUrl: imageUrl || '',
     };
 
     const creado = await addEventoToSheets(nuevoEvento);

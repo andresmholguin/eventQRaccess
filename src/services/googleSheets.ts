@@ -3,7 +3,7 @@ import { Evento, Localidad } from '../types';
 
 // Rango para la consulta y escritura en Sheets
 const SHEET_NAME = 'Eventos';
-const RANGE = `${SHEET_NAME}!A:I`;
+const RANGE = `${SHEET_NAME}!A:J`;
 
 /**
  * Retorna true si las credenciales de Google Sheets están configuradas.
@@ -60,6 +60,7 @@ async function initializeSheet(sheets: any, spreadsheetId: string) {
         'Fecha de creación',
         'Favorito',
         'Localidades JSON',
+        'URL de la Imagen',
       ];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -103,6 +104,7 @@ async function initializeSheet(sheets: any, spreadsheetId: string) {
         'Fecha de creación',
         'Favorito',
         'Localidades JSON',
+        'URL de la Imagen',
       ];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -181,6 +183,7 @@ export async function fetchEventosFromSheets(): Promise<Evento[]> {
       fechaCreacion: row[6] || '',
       favorito: row[7] === 'SI',
       localidades: localidadesParsed,
+      imageUrl: row[9] || '',
     });
   }
 
@@ -210,6 +213,7 @@ export async function addEventoToSheets(evento: Omit<Evento, 'id'>): Promise<Eve
     evento.fechaCreacion,
     evento.favorito ? 'SI' : 'NO',
     evento.localidades ? JSON.stringify(evento.localidades) : '[]',
+    evento.imageUrl || '',
   ];
 
   // Buscamos con pestaña específica, si falla intentamos con rango genérico
@@ -225,7 +229,7 @@ export async function addEventoToSheets(evento: Omit<Evento, 'id'>): Promise<Eve
       },
     });
   } catch (error) {
-    appendRange = 'A:I';
+    appendRange = 'A:J';
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: appendRange,
@@ -305,7 +309,7 @@ export async function deleteEventoInSheets(rowId: string): Promise<boolean> {
 
   const sheets = getSheetsInstance();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
-  const rowRange = `${SHEET_NAME}!A${rowId}:I${rowId}`;
+  const rowRange = `${SHEET_NAME}!A${rowId}:J${rowId}`;
 
   try {
     await sheets.spreadsheets.values.clear({
@@ -317,7 +321,7 @@ export async function deleteEventoInSheets(rowId: string): Promise<boolean> {
     try {
       await sheets.spreadsheets.values.clear({
         spreadsheetId,
-        range: `A${rowId}:I${rowId}`,
+        range: `A${rowId}:J${rowId}`,
       });
       return true;
     } catch (innerError) {

@@ -89,6 +89,21 @@ export default function EventCard({
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:border-slate-700/80 transition-all group flex flex-col justify-between">
       {/* Cabecera de la Tarjeta */}
       <div>
+        {/* Banner/Flyer del Evento */}
+        <div className="w-full h-32 relative rounded-xl overflow-hidden mb-4 border border-slate-800 bg-slate-950 flex items-center justify-center shrink-0 shadow-inner">
+          {evento.imageUrl ? (
+            <img
+              src={evento.imageUrl}
+              alt={evento.nombre}
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex items-center justify-center text-slate-700 font-mono text-[10px] tracking-wider select-none uppercase font-bold">
+              QRBoletos Helper
+            </div>
+          )}
+        </div>
+
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
@@ -121,27 +136,7 @@ export default function EventCard({
           </div>
         </div>
 
-        {/* Detalles de Identificadores */}
-        <div className="grid grid-cols-3 gap-2 bg-slate-950/60 rounded-xl p-2.5 mb-4 border border-slate-950 text-[11px] font-mono text-slate-400">
-          <div>
-            <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Promoter</span>
-            <span className="font-bold text-slate-300 block truncate" title={evento.promoterId}>
-              {evento.promoterId.length > 10 ? `${evento.promoterId.substring(0, 8)}...` : evento.promoterId}
-            </span>
-          </div>
-          <div>
-            <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Event</span>
-            <span className="font-bold text-slate-300 block truncate" title={evento.eventId}>
-              {evento.eventId.length > 10 ? `${evento.eventId.substring(0, 8)}...` : evento.eventId}
-            </span>
-          </div>
-          <div>
-            <span className="block text-[9px] text-slate-600 font-sans uppercase font-medium">Show</span>
-            <span className="font-bold text-slate-300 block truncate" title={evento.showId}>
-              {evento.showId.length > 10 ? `${evento.showId.substring(0, 8)}...` : evento.showId}
-            </span>
-          </div>
-        </div>
+        {/* Removido el detalle de identificadores por solicitud de imagen de portada */}
 
         {/* Módulo de Localidades (Destacado y requerido con comportamiento especial de scraping) */}
         <div className="mb-4">
