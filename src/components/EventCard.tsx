@@ -36,7 +36,7 @@ const MODULES = [
   },
   {
     name: 'Configuración Evento',
-    path: 'setup.aspx',
+    path: 'settings.aspx',
     icon: Settings,
     color: 'hover:bg-pink-500/10 hover:text-pink-400 hover:border-pink-500/30',
   },
