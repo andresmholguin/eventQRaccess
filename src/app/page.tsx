@@ -218,39 +218,81 @@ export default function Home() {
     <main className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500/20">
       {/* Navbar Superior */}
       <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-emerald-500 p-2 rounded-xl text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
-              <Layers className="w-5 h-5" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Logo y Badge */}
+          <div className="flex items-center justify-between md:justify-start gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-emerald-500 p-2 rounded-xl text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-extrabold text-sm tracking-wide text-slate-100 uppercase block">
+                  QRBoletos
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium tracking-wider -mt-1 block">
+                  Dashboard Helper
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="font-extrabold text-sm tracking-wide text-slate-100 uppercase block">
-                QRBoletos
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium tracking-wider -mt-1 block">
-                Dashboard Helper
-              </span>
+
+            {/* Estado de Persistencia */}
+            <div className="shrink-0">
+              {isSheetsMode === null ? (
+                <span className="w-2.5 h-2.5 bg-slate-700 animate-pulse rounded-full block"></span>
+              ) : isSheetsMode ? (
+                <div className="bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 rounded-full px-3 py-0.5 text-[9px] font-bold flex items-center gap-1 shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="hidden sm:inline">Google Sheets</span>
+                  <span className="sm:hidden">Sheets</span>
+                </div>
+              ) : (
+                <div
+                  className="bg-amber-500/5 text-amber-400 border border-amber-500/20 rounded-full px-3 py-0.5 text-[9px] font-bold flex items-center gap-1 shadow-sm cursor-help"
+                  title="Google Sheets no configurado. Los datos se guardarán localmente."
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Local</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Estado de Persistencia */}
-          <div className="flex items-center gap-2">
-            {isSheetsMode === null ? (
-              <span className="w-2.5 h-2.5 bg-slate-700 animate-pulse rounded-full"></span>
-            ) : isSheetsMode ? (
-              <div className="bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 rounded-full px-3.5 py-1 text-[11px] font-semibold flex items-center gap-1.5 shadow-md">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>Google Sheets</span>
-              </div>
-            ) : (
-              <div
-                className="bg-amber-500/5 text-amber-400 border border-amber-500/20 rounded-full px-3.5 py-1 text-[11px] font-semibold flex items-center gap-1.5 shadow-md"
-                title="Las variables de entorno de Google Sheets no están configuradas en .env.local"
+          {/* Controles en el Nav (Buscador, Sheet Link, Nuevo Evento) */}
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+            {/* Buscador */}
+            <div className="relative w-full sm:w-60 md:w-64">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Buscar evento..."
+                className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-550"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Botón Google Sheet */}
+            {isSheetsMode && (
+              <a
+                href="https://docs.google.com/spreadsheets/d/1saVyrEYq8ITiSESR4Z13vJufjVvuKVmm9vjAsUFq3jg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer bg-slate-900 border border-slate-800 hover:border-emerald-500/30 text-[11px] font-semibold px-3 py-2 rounded-xl hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm text-slate-300 w-full sm:w-auto justify-center"
               >
-                <AlertTriangle className="w-4 h-4 text-amber-500 animate-pulse" />
-                <span>Almacenamiento Local (Fallback)</span>
-              </div>
+                <Database className="w-4 h-4 text-emerald-500" />
+                <span className="hidden lg:inline">Google Sheet</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
             )}
+
+            {/* Botón Nuevo Evento */}
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-3.5 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 w-full sm:w-auto shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="inline">Nuevo Evento</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -267,32 +309,6 @@ export default function Home() {
         ) : (
           // Dashboard principal
           <div className="space-y-8">
-            {/* Cabecera / Bienvenida */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-900 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-              <div className="relative z-10 space-y-2">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-50 to-slate-200">
-                  Panel de Gestión QRBoletos
-                </h1>
-                <p className="text-slate-400 text-sm max-w-xl">
-                  Accede rápidamente a resúmenes de ventas, etapas, localidades y configuraciones específicas de cualquier evento sin necesidad de navegar manualmente.
-                </p>
-              </div>
-
-              {/* Botón a Google Sheets */}
-              {isSheetsMode && (
-                <a
-                  href="https://docs.google.com/spreadsheets/d/1saVyrEYq8ITiSESR4Z13vJufjVvuKVmm9vjAsUFq3jg"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative z-10 cursor-pointer bg-slate-900 border border-slate-800 hover:border-emerald-500/30 text-xs font-semibold px-4.5 py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 self-start md:self-auto shadow-md"
-                >
-                  <Database className="w-4.5 h-4.5 text-emerald-500" />
-                  Abrir Google Sheet
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-            </div>
-
             {errorMsg && (
               <div className="bg-amber-500/5 border border-amber-500/20 text-amber-400 p-4 rounded-2xl text-xs flex items-center gap-2">
                 <Info className="w-5 h-5 shrink-0 text-amber-500" />
@@ -302,34 +318,12 @@ export default function Home() {
 
             {/* Contenedor de la lista de eventos */}
             <div className="space-y-6">
-              {/* Cabecera de la lista + Buscador y Botón */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                  <LayoutGrid className="w-5 h-5 text-emerald-500" />
+              {/* Cabecera de la lista */}
+              <div className="border-b border-slate-800 pb-3 mb-2 flex items-center justify-between">
+                <h2 className="text-base font-bold text-slate-200 flex items-center gap-2">
+                  <LayoutGrid className="w-4.5 h-4.5 text-emerald-500" />
                   Eventos Guardados ({eventos.length})
                 </h2>
-
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                  {/* Buscador */}
-                  <div className="relative w-full sm:w-72">
-                    <Search className="w-4.5 h-4.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, promoter o evento..."
-                      className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  {/* Botón Nuevo Evento */}
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-4.5 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 w-full sm:w-auto shrink-0"
-                  >
-                    <Plus className="w-4.5 h-4.5" />
-                    Nuevo Evento
-                  </button>
-                </div>
               </div>
 
               {isLoading ? (
