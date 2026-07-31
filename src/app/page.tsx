@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   AlertTriangle,
   Plus,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Cargar eventos iniciales al cargar la página
   useEffect(() => {
@@ -218,9 +220,9 @@ export default function Home() {
     <main className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500/20">
       {/* Navbar Superior */}
       <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo y Badge */}
-          <div className="flex items-center justify-between md:justify-start gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
               <div className="bg-emerald-500 p-2 rounded-xl text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
                 <Layers className="w-5 h-5" />
@@ -242,8 +244,7 @@ export default function Home() {
               ) : isSheetsMode ? (
                 <div className="bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 rounded-full px-3 py-0.5 text-[9px] font-bold flex items-center gap-1 shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="hidden sm:inline">Google Sheets</span>
-                  <span className="sm:hidden">Sheets</span>
+                  <span>Google Sheets</span>
                 </div>
               ) : (
                 <div
@@ -257,10 +258,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Controles en el Nav (Buscador, Sheet Link, Nuevo Evento) */}
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+          {/* Controles en Escritorio (md en adelante) */}
+          <div className="hidden md:flex items-center gap-3">
             {/* Buscador */}
-            <div className="relative w-full sm:w-60 md:w-64">
+            <div className="relative w-64">
               <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -277,10 +278,10 @@ export default function Home() {
                 href="https://docs.google.com/spreadsheets/d/1saVyrEYq8ITiSESR4Z13vJufjVvuKVmm9vjAsUFq3jg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="cursor-pointer bg-slate-900 border border-slate-800 hover:border-emerald-500/30 text-[11px] font-semibold px-3 py-2 rounded-xl hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm text-slate-300 w-full sm:w-auto justify-center"
+                className="cursor-pointer bg-slate-900 border border-slate-800 hover:border-emerald-500/30 text-[11px] font-semibold px-3 py-2 rounded-xl hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm text-slate-300"
               >
                 <Database className="w-4 h-4 text-emerald-500" />
-                <span className="hidden lg:inline">Google Sheet</span>
+                <span>Google Sheet</span>
                 <ExternalLink className="w-3 h-3 opacity-60" />
               </a>
             )}
@@ -288,13 +289,70 @@ export default function Home() {
             {/* Botón Nuevo Evento */}
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-3.5 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 w-full sm:w-auto shrink-0"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-3.5 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span className="inline">Nuevo Evento</span>
+              <span>Nuevo Evento</span>
+            </button>
+          </div>
+
+          {/* Botón Hamburguesa en Móviles */}
+          <div className="flex md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-850 text-slate-300 rounded-xl transition-all hover:text-white cursor-pointer"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+
+        {/* Dropdown del Menú Móvil */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-900 bg-slate-950 p-4 space-y-4 shadow-xl animate-fade-in">
+            {/* Buscador Móvil */}
+            <div className="relative w-full">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Buscar evento..."
+                className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Botones en menú móvil */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Botón Google Sheet */}
+              {isSheetsMode && (
+                <a
+                  href="https://docs.google.com/spreadsheets/d/1saVyrEYq8ITiSESR4Z13vJufjVvuKVmm9vjAsUFq3jg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer bg-slate-900 border border-slate-850 hover:border-emerald-500/30 text-xs font-semibold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5 shadow-sm text-slate-300 text-center"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Database className="w-4.5 h-4.5 text-emerald-500" />
+                  <span>Google Sheet</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                </a>
+              )}
+
+              {/* Botón Nuevo Evento */}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAddModalOpen(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-3 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer w-full"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Evento</span>
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Contenido Principal */}
