@@ -58,5 +58,11 @@ export function buildModuleUrl(
 ): string {
   // Asegurar que el path comience con / si no lo tiene
   const cleanPath = modulePath.startsWith('/') ? modulePath : `/${modulePath}`;
+  
+  // Si la ruta del módulo es settings.aspx (Configuración de Evento), no requiere /shows/{showId}
+  if (modulePath === 'settings.aspx') {
+    return `${domain}/promoters/${promoterId}/events/${eventId}${cleanPath}`;
+  }
+  
   return `${domain}/promoters/${promoterId}/events/${eventId}/shows/${showId}${cleanPath}`;
 }
