@@ -7,7 +7,7 @@ import LocalitiesView from '@/components/LocalitiesView';
 import { Evento, Localidad } from '@/types';
 import { getEventTimestamp } from '@/utils/dateFormatter';
 import {
-  Layers,
+  LayoutDashboard,
   Database,
   Search,
   Star,
@@ -254,7 +254,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
               <div className="bg-emerald-500 p-2 rounded-xl text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
-                <Layers className="w-5 h-5" />
+                <LayoutDashboard className="w-5 h-5" />
               </div>
               <div>
                 <span className="font-extrabold text-sm tracking-wide text-slate-100 uppercase block">
