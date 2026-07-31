@@ -34,18 +34,6 @@ const MODULES = [
     color: 'hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/30',
   },
   {
-    name: 'Ventas por Localidad',
-    path: 'reports/sales/bysection.aspx',
-    icon: BarChart2,
-    color: 'hover:bg-purple-500/10 hover:text-purple-400 hover:border-purple-500/30',
-  },
-  {
-    name: 'Ventas por Etapa',
-    path: 'reports/sales/byphase.aspx',
-    icon: Layers,
-    color: 'hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/30',
-  },
-  {
     name: 'Etapas',
     path: 'phases/list.aspx',
     icon: Calendar,
@@ -56,12 +44,6 @@ const MODULES = [
     path: 'setup.aspx',
     icon: Settings,
     color: 'hover:bg-pink-500/10 hover:text-pink-400 hover:border-pink-500/30',
-  },
-  {
-    name: 'Informes',
-    path: 'reports/',
-    icon: FileText,
-    color: 'hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30',
   },
 ];
 
@@ -192,7 +174,7 @@ export default function EventCard({
           Enlaces de QRBoletos
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {MODULES.map((mod) => {
+          {MODULES.map((mod, idx) => {
             const url = buildModuleUrl(domain, evento.promoterId, evento.eventId, evento.showId, mod.path);
             const Icon = mod.icon;
 
@@ -202,7 +184,7 @@ export default function EventCard({
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center gap-2 bg-slate-950 border border-slate-950/60 rounded-xl p-2.5 text-xs font-medium text-slate-300 transition-all ${mod.color} cursor-pointer`}
+                className={`flex items-center gap-2 bg-slate-950 border border-slate-950/60 rounded-xl p-2.5 text-xs font-medium text-slate-300 transition-all ${mod.color} cursor-pointer ${idx === 2 ? 'col-span-2 justify-center' : ''}`}
               >
                 <Icon className="w-4.5 h-4.5 shrink-0 text-slate-500 group-hover:text-inherit" />
                 <span className="truncate">{mod.name}</span>

@@ -14,7 +14,9 @@ import {
   Info,
   ExternalLink,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Plus,
+  X
 } from 'lucide-react';
 
 export default function Home() {
@@ -24,6 +26,7 @@ export default function Home() {
   const [selectedEvento, setSelectedEvento] = useState<Evento | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Cargar eventos iniciales al cargar la página
   useEffect(() => {
@@ -291,25 +294,18 @@ export default function Home() {
               </div>
             )}
 
-            {/* Layout de 2 columnas: Izquierda agregar, Derecha lista de eventos */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Columna Izquierda: Formulario */}
-              <div className="lg:col-span-1 space-y-6">
-                <div className="sticky top-24">
-                  <AddEventForm onAddEvent={handleAddEvent} />
-                </div>
-              </div>
+            {/* Contenedor de la lista de eventos */}
+            <div className="space-y-6">
+              {/* Cabecera de la lista + Buscador y Botón */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5 text-emerald-500" />
+                  Eventos Guardados ({eventos.length})
+                </h2>
 
-              {/* Columna Derecha: Tarjetas */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Cabecera de la lista + Buscador */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                    <LayoutGrid className="w-5 h-5 text-emerald-500" />
-                    Eventos Guardados ({eventos.length})
-                  </h2>
-
-                  <div className="relative w-full md:w-72">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                  {/* Buscador */}
+                  <div className="relative w-full sm:w-72">
                     <Search className="w-4.5 h-4.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
@@ -319,80 +315,125 @@ export default function Home() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
+                  {/* Botón Nuevo Evento */}
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-4.5 rounded-xl transition-all shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 w-full sm:w-auto shrink-0"
+                  >
+                    <Plus className="w-4.5 h-4.5" />
+                    Nuevo Evento
+                  </button>
                 </div>
+              </div>
 
-                {isLoading ? (
-                  // Skeletal Loading
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-64 bg-slate-900/50 border border-slate-800 animate-pulse rounded-2xl"></div>
-                    ))}
+              {isLoading ? (
+                // Skeletal Loading
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-64 bg-slate-900/50 border border-slate-800 animate-pulse rounded-2xl"></div>
+                  ))}
+                </div>
+              ) : eventos.length === 0 ? (
+                // Estado Vacío
+                <div className="bg-slate-900/30 border border-slate-900 rounded-3xl p-16 text-center max-w-xl mx-auto">
+                  <div className="bg-slate-950 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-slate-600 border border-slate-900 mb-4 shadow-inner">
+                    <LayoutGrid className="w-7 h-7" />
                   </div>
-                ) : eventos.length === 0 ? (
-                  // Estado Vacío
-                  <div className="bg-slate-900/30 border border-slate-900 rounded-3xl p-12 text-center">
-                    <div className="bg-slate-950 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-slate-600 border border-slate-900 mb-4 shadow-inner">
-                      <LayoutGrid className="w-7 h-7" />
+                  <h3 className="text-slate-300 font-semibold mb-1 text-sm">No hay eventos agregados</h3>
+                  <p className="text-slate-500 text-xs max-w-sm mx-auto mb-4">
+                    Comienza agregando un evento haciendo clic en el botón "+ Nuevo Evento" de arriba.
+                  </p>
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-5 rounded-xl transition-all shadow-md cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar Evento
+                  </button>
+                </div>
+              ) : (
+                // Mostrar Listado
+                <div className="space-y-8">
+                  {/* Sección Favoritos */}
+                  {favoritos.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5" fill="currentColor" />
+                        Favoritos ({favoritos.length})
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {favoritos.map((evento) => (
+                          <EventCard
+                            key={evento.id}
+                            evento={evento}
+                            onToggleFavorite={handleToggleFavorite}
+                            onDeleteEvent={handleDeleteEvent}
+                            onOpenLocalities={setSelectedEvento}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <h3 className="text-slate-300 font-semibold mb-1 text-sm">No hay eventos agregados</h3>
-                    <p className="text-slate-500 text-xs max-w-sm mx-auto">
-                      Pega la URL de algún evento de QRBoletos en el formulario de la izquierda para comenzar.
-                    </p>
-                  </div>
-                ) : (
-                  // Mostrar Listado
-                  <div className="space-y-8">
-                    {/* Sección Favoritos */}
+                  )}
+
+                  {/* Todos los Eventos */}
+                  <div className="space-y-3">
                     {favoritos.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5" fill="currentColor" />
-                          Favoritos ({favoritos.length})
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {favoritos.map((evento) => (
-                            <EventCard
-                              key={evento.id}
-                              evento={evento}
-                              onToggleFavorite={handleToggleFavorite}
-                              onDeleteEvent={handleDeleteEvent}
-                              onOpenLocalities={setSelectedEvento}
-                            />
-                          ))}
-                        </div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Todos los Eventos ({regulares.length})
                       </div>
                     )}
-
-                    {/* Todos los Eventos */}
-                    <div className="space-y-3">
-                      {favoritos.length > 0 && (
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                          Todos los Eventos ({regulares.length})
-                        </div>
-                      )}
-                      {regulares.length === 0 && favoritos.length > 0 ? (
-                        <p className="text-slate-600 text-xs italic">No hay más eventos</p>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {regulares.map((evento) => (
-                            <EventCard
-                              key={evento.id}
-                              evento={evento}
-                              onToggleFavorite={handleToggleFavorite}
-                              onDeleteEvent={handleDeleteEvent}
-                              onOpenLocalities={setSelectedEvento}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {regulares.length === 0 && favoritos.length > 0 ? (
+                      <p className="text-slate-600 text-xs italic">No hay más eventos</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {regulares.map((evento) => (
+                          <EventCard
+                            key={evento.id}
+                            evento={evento}
+                            onToggleFavorite={handleToggleFavorite}
+                            onDeleteEvent={handleDeleteEvent}
+                            onOpenLocalities={setSelectedEvento}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Modal para Agregar Evento */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in transition-all">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Plus className="text-emerald-500 w-4.5 h-4.5" />
+                Agregar Nuevo Evento
+              </h3>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 text-slate-500 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Contenido / Formulario */}
+            <div className="p-6 overflow-y-auto">
+              <AddEventForm
+                onAddEvent={async (nuevo) => {
+                  await handleAddEvent(nuevo);
+                  setIsAddModalOpen(false); // Cerrar tras agregar
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
