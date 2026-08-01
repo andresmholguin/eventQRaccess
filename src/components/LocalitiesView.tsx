@@ -133,10 +133,54 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
     setError(null);
   };
 
-  // Filtrar localidades por búsqueda
-  const filteredLocalidades = localidades.filter((loc) =>
-    loc.nombre.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Determinar la prioridad de visualización de cada localidad según su nombre
+  const getLocalityPriority = (name: string): number => {
+    const n = name.toLowerCase();
+
+    // 1. Experiencia Gold
+    if (n.includes('gold') || n.includes('experiencia gold')) {
+      return 1;
+    }
+
+    // 2. Platea
+    if (n.includes('platea')) {
+      return 2;
+    }
+
+    // 3. VIP's (Excluyendo visual restringida o VR)
+    if (n.includes('vip')) {
+      if (n.includes('restringida') || n.includes('vr')) {
+        return 4; // 4. VIP's visual restringida (VR)
+      }
+      return 3;
+    }
+
+    // 5. Preferencial (Excluyendo visual restringida o VR)
+    if (n.includes('preferencial')) {
+      if (n.includes('restringida') || n.includes('vr')) {
+        return 6; // 6. Preferencial visual restringida (VR)
+      }
+      return 5;
+    }
+
+    // 7. Cualquier otra localidad
+    return 7;
+  };
+
+  // Filtrar y ordenar localidades por búsqueda y prioridad
+  const filteredLocalidades = localidades
+    .filter((loc) => loc.nombre.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const priorityA = getLocalityPriority(a.nombre);
+      const priorityB = getLocalityPriority(b.nombre);
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Orden numérico/alfabético secundario para la misma categoría (ej. VIP 1, VIP 2...)
+      return a.nombre.localeCompare(b.nombre, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
