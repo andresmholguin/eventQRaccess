@@ -253,12 +253,16 @@ export default function Home() {
           {/* Logo y Badge */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="bg-emerald-500/10 p-1.5 rounded-xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="w-7 h-7 object-contain"
-                />
+              <div className="bg-emerald-500/10 p-1.5 rounded-xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5 flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="w-7 h-7">
+                  <rect x="10" y="10" width="80" height="80" rx="18" fill="none" stroke="#047857" strokeWidth="6"/>
+                  <rect x="21" y="55" width="11" height="25" rx="3" fill="#10B981"/>
+                  <rect x="37" y="45" width="11" height="35" rx="3" fill="#10B981"/>
+                  <rect x="53" y="35" width="11" height="45" rx="3" fill="#10B981"/>
+                  <rect x="69" y="25" width="11" height="55" rx="3" fill="#10B981"/>
+                  <path d="M 18 45 Q 45 40 64 22" fill="none" stroke="#047857" strokeWidth="6" strokeLinecap="round"/>
+                  <polygon points="56,18 73,13 68,30" fill="#047857" stroke="#047857" strokeWidth="2" strokeLinejoin="round"/>
+                </svg>
               </div>
               <div>
                 <span className="font-extrabold text-sm tracking-wide text-slate-100 uppercase block">
