@@ -298,8 +298,8 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
             </div>
           </div>
 
-          {/* Listado de tarjetas de localidad - Altamente accesibles */}
-          <div className="grid grid-cols-1 gap-3">
+          {/* Listado de tarjetas de localidad - Altamente optimizado en espacio */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredLocalidades.map((loc, idx) => {
               // Obtener los links específicos
               const configLink = loc.links?.find(l => l.label === 'Configuración')?.url || loc.url;
@@ -309,56 +309,66 @@ export default function LocalitiesView({ evento, onBack, onSaveLocalities }: Loc
               return (
                 <div
                   key={idx}
-                  className="bg-slate-950 border border-slate-800/80 rounded-xl p-4.5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700/60 transition-all group"
+                  className="bg-slate-950 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-slate-700/60 transition-all group shadow-sm"
                 >
                   {/* Nombre de la Localidad */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-110 transition-transform"></div>
-                    <span className="font-extrabold text-sm text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-wide">
+                  <div className="flex items-center gap-2 border-b border-slate-900 pb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:scale-110 transition-transform shrink-0"></div>
+                    <span className="font-extrabold text-xs text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-wide truncate" title={loc.nombre}>
                       {loc.nombre}
                     </span>
                   </div>
 
-                  {/* Botones de acción - Grandes y altamente accesibles */}
-                  <div className="grid grid-cols-3 sm:flex items-center gap-2">
+                  {/* Botones de acción - Compactos y distribuidos */}
+                  <div className="grid grid-cols-3 gap-1.5">
                     {/* Botón de Configuración */}
                     <a
                       href={makeAbsoluteUrl(configLink)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-pink-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-pink-400 rounded-lg py-2 px-1 text-[10px] font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                      title="Configuración"
                     >
-                      <Settings className="w-3.5 h-3.5" />
-                      <span>Configuración</span>
-                      <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      <Settings className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate w-full text-center">Config</span>
                     </a>
 
                     {/* Botón de Precios */}
-                    {pricesLink && (
+                    {pricesLink ? (
                       <a
                         href={makeAbsoluteUrl(pricesLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                        className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-400 rounded-lg py-2 px-1 text-[10px] font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                        title="Precios"
                       >
-                        <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Precios</span>
-                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        <DollarSign className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="truncate w-full text-center">Precios</span>
                       </a>
+                    ) : (
+                      <div className="bg-slate-950/40 border border-slate-900 text-slate-600 rounded-lg py-2 px-1 text-[10px] font-bold flex flex-col items-center justify-center gap-1 select-none opacity-40">
+                        <DollarSign className="w-3.5 h-3.5 shrink-0" />
+                        <span>Precios</span>
+                      </div>
                     )}
 
                     {/* Botón de Acomodación */}
-                    {seatsLink && (
+                    {seatsLink ? (
                       <a
                         href={makeAbsoluteUrl(seatsLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-slate-900 border border-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 rounded-xl py-2 px-3.5 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98]"
+                        className="bg-slate-900 border border-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 rounded-lg py-2 px-1 text-[10px] font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                        title="Acomodación"
                       >
-                        <Armchair className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Acomodación</span>
-                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        <Armchair className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span className="truncate w-full text-center">Asientos</span>
                       </a>
+                    ) : (
+                      <div className="bg-slate-950/40 border border-slate-900 text-slate-600 rounded-lg py-2 px-1 text-[10px] font-bold flex flex-col items-center justify-center gap-1 select-none opacity-40">
+                        <Armchair className="w-3.5 h-3.5 shrink-0" />
+                        <span>Asientos</span>
+                      </div>
                     )}
                   </div>
                 </div>
