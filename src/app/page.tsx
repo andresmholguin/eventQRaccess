@@ -252,7 +252,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo y Badge */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                setSelectedEvento(null);
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all text-left bg-transparent border-none p-0 focus:outline-none"
+              title="Ir al inicio"
+            >
               <div className="bg-emerald-500/10 p-1.5 rounded-xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5 flex items-center justify-center">
                 <svg viewBox="0 0 100 100" className="w-7 h-7">
                   <rect x="10" y="10" width="80" height="80" rx="18" fill="none" stroke="#047857" strokeWidth="6"/>
@@ -272,7 +279,7 @@ export default function Home() {
                   Dashboard Helper
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* Estado de Persistencia */}
             <div className="shrink-0">
