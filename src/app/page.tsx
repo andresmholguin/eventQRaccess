@@ -20,7 +20,10 @@ import {
   X,
   Menu,
   Sun,
-  Moon
+  Moon,
+  Archive,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 export default function Home() {
@@ -33,6 +36,7 @@ export default function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isArchiveExpanded, setIsArchiveExpanded] = useState(false);
 
   // Cargar tema inicial al cargar la página
   useEffect(() => {
@@ -237,13 +241,28 @@ export default function Home() {
     e.eventId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Obtener timestamp de hoy a las 00:00:00 local para comparar fechas enteras
+  const getTodayStartTimestamp = (): number => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  };
+
   // Ordenar cronológicamente (más cercano primero)
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     return getEventTimestamp(a.fecha) - getEventTimestamp(b.fecha);
   });
 
-  const favoritos = sortedEvents.filter((e) => e.favorito);
-  const regulares = sortedEvents.filter((e) => !e.favorito);
+  const todayStart = getTodayStartTimestamp();
+
+  // Dividir en activos (hoy y futuros) y pasados (archivados)
+  const activeEvents = sortedEvents.filter((e) => getEventTimestamp(e.fecha) >= todayStart);
+  const passedEvents = sortedEvents
+    .filter((e) => getEventTimestamp(e.fecha) < todayStart)
+    .reverse(); // El más reciente pasado primero
+
+  // Clasificar activos en favoritos y regulares
+  const favoritos = activeEvents.filter((e) => e.favorito);
+  const regulares = activeEvents.filter((e) => !e.favorito);
 
   return (
     <main className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/20">
@@ -469,6 +488,15 @@ export default function Home() {
                     Agregar Evento
                   </button>
                 </div>
+              ) : filteredEvents.length === 0 ? (
+                // Búsqueda sin coincidencias
+                <div className="bg-slate-900/10 border border-slate-900 rounded-3xl p-12 text-center max-w-md mx-auto">
+                  <Search className="w-8 h-8 text-slate-550 mx-auto mb-3" />
+                  <h3 className="text-slate-300 font-semibold text-sm mb-1">Sin Resultados</h3>
+                  <p className="text-slate-500 text-xs">
+                    No encontramos ningún evento que coincida con &quot;{searchQuery}&quot;.
+                  </p>
+                </div>
               ) : (
                 // Mostrar Listado
                 <div className="space-y-8">
@@ -493,29 +521,68 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Todos los Eventos */}
-                  <div className="space-y-3">
-                    {favoritos.length > 0 && (
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        Todos los Eventos ({regulares.length})
-                      </div>
-                    )}
-                    {regulares.length === 0 && favoritos.length > 0 ? (
-                      <p className="text-slate-600 text-xs italic">No hay más eventos</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {regulares.map((evento) => (
-                          <EventCard
-                            key={evento.id}
-                            evento={evento}
-                            onToggleFavorite={handleToggleFavorite}
-                            onDeleteEvent={handleDeleteEvent}
-                            onOpenLocalities={setSelectedEvento}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {/* Todos los Eventos Próximos */}
+                  {(regulares.length > 0 || favoritos.length > 0) && (
+                    <div className="space-y-3">
+                      {favoritos.length > 0 && (
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-550">
+                          Otros Eventos Próximos ({regulares.length})
+                        </div>
+                      )}
+                      {regulares.length === 0 && favoritos.length > 0 ? (
+                        <p className="text-slate-650 text-xs italic">No hay más eventos próximos</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {regulares.map((evento) => (
+                            <EventCard
+                              key={evento.id}
+                              evento={evento}
+                              onToggleFavorite={handleToggleFavorite}
+                              onDeleteEvent={handleDeleteEvent}
+                              onOpenLocalities={setSelectedEvento}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sección Eventos Archivados (Historial) */}
+                  {passedEvents.length > 0 && (
+                    <div className="border-t border-slate-900 pt-6 mt-8 space-y-4">
+                      {/* Cabecera del Acordeón Archivados */}
+                      <button
+                        onClick={() => setIsArchiveExpanded(!isArchiveExpanded)}
+                        className="w-full flex items-center justify-between text-left text-slate-400 hover:text-slate-200 transition-all py-2.5 px-4 bg-slate-950/20 hover:bg-slate-950/50 rounded-2xl border border-slate-900 cursor-pointer group active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Archive className="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            Eventos Archivados / Pasados ({passedEvents.length})
+                          </span>
+                        </div>
+                        <div className="text-slate-500 group-hover:text-slate-300 transition-colors">
+                          {isArchiveExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </button>
+
+                      {/* Listado de Archivados (Collapsible) */}
+                      {isArchiveExpanded && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 animate-fade-in">
+                          {passedEvents.map((evento) => (
+                            <div key={evento.id} className="opacity-60 hover:opacity-100 transition-opacity duration-200">
+                              <EventCard
+                                evento={evento}
+                                onToggleFavorite={handleToggleFavorite}
+                                onDeleteEvent={handleDeleteEvent}
+                                onOpenLocalities={setSelectedEvento}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
